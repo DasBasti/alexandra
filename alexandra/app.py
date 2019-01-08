@@ -70,7 +70,7 @@ class Application:
             ids = {
                 id_['id']: id_.get('value')
                 for _, id_ in
-                body['request']['intent'].get('slots', {}).items()
+                body['request']['intent'].get('slots', {}).items() if id.get('id')
             }
 
             arity = intent_fn.__code__.co_argcount
