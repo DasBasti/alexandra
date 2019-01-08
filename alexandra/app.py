@@ -68,9 +68,9 @@ class Application:
             }
             
             ids = {
-                id_['id']: id_.get('value')
-                for _, id_ in
-                body['request']['intent'].get('slots', {}).items() if id_.get('id')
+                slot['name']: slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
+                for _, slot in
+                body['request']['intent'].get('slots', {}).items()
             }
 
             arity = intent_fn.__code__.co_argcount
@@ -105,9 +105,11 @@ class Application:
     def intent(self, intent_name):
         """Decorator to register a handler for the given intent.
 
-        The decorated function can either take 0 or 2 arguments. If two are
-        specified, it will be provided a dictionary of `{slot_name: value}` and
-        a :py:class:`alexandra.session.Session` instance.
+        The decorated function can either take 0, 2 or 3 arguments. If two are
+        specified, it will be provided a dictionary of `{slot_name: value}`. If
+        three are defined it will proovide a dictionary of `{slot_name: id}`
+        based on the ID given in the develper console. Variante with arguments 
+        also provide a :py:class:`alexandra.session.Session` instance.
 
         If no session was provided in the request, the session object will be
         `None`. ::

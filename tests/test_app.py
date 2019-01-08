@@ -13,13 +13,13 @@ def _request(req_type, session=None):
     }
 
 
-def _intent(name, slots=None, session=None):
+def _intent(name, slots=None, ids={}, session=None):
     req = _request('IntentRequest', session)
 
     req['request']['intent'] = {
         'name': name,
         'slots': {
-            k: {'name': k, 'value': v}
+            k: {'name': k, 'value': v, "resolutions": {"resolutionsPerAuthority": [{"values": [{"value": {"id": ids.get(k)}}]}]}}
             for k, v in (slots or {}).items()
         }
     }
@@ -70,7 +70,7 @@ def test_intent_noargs():
         return 'bar'
 
     assert app.dispatch_request(_intent('Foo')) == 'foo'
-    assert app.dispatch_request(_intent('Foo', slots, session)) == 'foo'
+    assert app.dispatch_request(_intent('Foo', slots=slots, session=session)) == 'foo'
     assert app.dispatch_request(_intent('Bar')) == 'bar'
 
 
@@ -87,7 +87,25 @@ def test_intent_withargs():
     slots = {'fizz': 'buzz', 'ab': 'cd'}
     session = {'attributes': {'foo': 'bar'}}
 
-    assert app.dispatch_request(_intent('Foo', slots, session)) == 'foo'
+    assert app.dispatch_request(_intent('Foo', slots=slots, session=session)) == 'foo'
+
+
+def test_intent_withargs_id():
+    app = Application()
+
+    @app.intent('Bar')
+    def bar(slots, ids, session):
+        assert slots.get('fizz') == 'buzz'
+        assert ids.get('fizz') == 'BUZZ'
+        assert session.get('foo') == 'bar'
+
+        return 'bar'
+
+    slots = {'fizz': 'buzz', 'ab': 'cd'}
+    ids = {'fizz':'BUZZ', 'ab': 'CD'}
+    session = {'attributes': {'foo': 'bar'}}
+    
+    assert app.dispatch_request(_intent('Bar', slots=slots, ids=ids, session=session)) == 'bar'
 
 
 def test_intent_badargs():
@@ -123,4 +141,4 @@ def test_unknown_intent_handler():
     slots = {'fizz': 'buzz', 'ab': 'cd'}
     session = {'attributes': {'foo': 'bar'}}
 
-    assert app.dispatch_request(_intent('What?', slots, session)) == 'bar'
+    assert app.dispatch_request(_intent('What?', slots=slots, session=session)) == 'bar'
