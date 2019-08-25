@@ -53,7 +53,6 @@ class TestRespond:
     def test_argument_mashup(self):
         resp = util.respond(text='foo', reprompt_ssml='bar',
                             attributes={'a': 'b'}, end_session=False)
-
         assert resp == {
             'version': '1.0',
             'response': {
@@ -65,6 +64,55 @@ class TestRespond:
             },
             'sessionAttributes': {'a': 'b'}
         }
+
+    def test_directive(self):
+        apl = {
+            "document": {
+                "type": "APL"
+            }
+        }
+
+        resp = util.respond(text='foo', directive=apl, end_session=False)
+        assert resp == {
+            'version': '1.0',
+            'response': {
+                'outputSpeech': {'type': 'PlainText', 'text': 'foo'},
+                'directives': [
+                    {'document': {
+                        'type': 'APL'
+                        }
+                    }
+                ],
+                'shouldEndSession': False
+            },
+            'sessionAttributes': {}
+        }
+
+class TestUpsell:
+    '''alexandra.util.upsell'''
+
+    def test_upsell_sanity(self):
+        resp = util.upsell('foo', 'bar', 'baz')
+        assert resp == {
+            'version': '1.0',
+            'response': {
+                'directives': [
+                {
+                    'type': 'Connections.SendRequest',
+                    'name': 'Upsell',         
+                    'payload': {
+                                'InSkillProduct': {
+                                    'foo'                          
+                                },
+                                'upsellMessage': 'bar'
+                    },
+                    'token': '798f012674b5b8dcab4b00114bdf6738a69a4cdcf7ca0db1149260c9f81b73f7'
+                }
+            ],
+            'shouldEndSession': 'true'
+            }
+        }
+  
 
 
 class TestReprompt:

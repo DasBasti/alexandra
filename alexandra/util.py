@@ -3,6 +3,7 @@
 import base64
 import logging
 import posixpath
+import hashlib
 
 try:
     from urlparse import urlparse
@@ -23,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 def respond(text=None, ssml=None, attributes=None, reprompt_text=None,
-            reprompt_ssml=None, end_session=True):
+            reprompt_ssml=None, directive=None, end_session=True):
     """ Build a dict containing a valid response to an Alexa request.
 
     If speech output is desired, either of `text` or `ssml` should
@@ -60,8 +61,40 @@ def respond(text=None, ssml=None, attributes=None, reprompt_text=None,
     if reprompt_output:
         obj['response']['reprompt'] = {'outputSpeech': reprompt_output}
 
+    if directive:
+        obj['response']['directives'] = [directive]
+
     return obj
 
+
+def upsell(in_skill_product, message, user_id):
+    """ Generate an upsell message
+    
+    This will promt the user to listen to sales information and will
+    hand over the user to Amazon for processing
+    """
+
+    obj = {
+        'version': '1.0',
+        'response': {
+            'directives': [
+            {
+                'type': 'Connections.SendRequest',
+                'name': 'Upsell',         
+                'payload': {
+                            'InSkillProduct': {
+                                in_skill_product                          
+                            },
+                            'upsellMessage': message
+                },
+                'token': _generate_correlation_token(in_skill_product, user_id)  
+            }
+        ],
+        'shouldEndSession': 'true'
+        }
+    }
+
+    return obj
 
 def reprompt(text=None, ssml=None, attributes=None):
     """Convenience method to save a little bit of typing for the common case of
@@ -181,3 +214,7 @@ def _get_certificate(cert_url):
 
     _cache[cert_url] = cert
     return cert
+
+def _generate_correlation_token(in_skill_product, user_id):
+    """ Hash skill and user id to recognize transaction """
+    return hashlib.sha256(in_skill_product.encode()+user_id.encode()).hexdigest()
