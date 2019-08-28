@@ -51,7 +51,6 @@ class Context:
 
 
     def get(self, attr, default=None):
-        """Get an attribute defined by this session"""
+        """Get an attribute defined by this context"""
 
-        attrs = self.body.get('attributes') or {}
-        return attrs.get(attr, default)
+        return self.body.get(attr, default)

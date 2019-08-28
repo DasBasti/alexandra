@@ -13,7 +13,7 @@ def _request(req_type, session=None):
     }
 
 
-def _intent(name, slots=None, ids={}, session=None):
+def _intent(name, slots=None, ids={}, session=None, context=None):
     req = _request('IntentRequest', session)
 
     req['request']['intent'] = {
@@ -23,6 +23,7 @@ def _intent(name, slots=None, ids={}, session=None):
             for k, v in (slots or {}).items()
         }
     }
+    req['context'] = context
 
     return req
 
@@ -106,6 +107,26 @@ def test_intent_withargs_id():
     session = {'attributes': {'foo': 'bar'}}
     
     assert app.dispatch_request(_intent('Bar', slots=slots, ids=ids, session=session)) == 'bar'
+
+
+def test_intent_withargs_id_context():
+    app = Application()
+
+    @app.intent('Bar')
+    def bar(slots, ids, session, context):
+        assert slots.get('fizz') == 'buzz'
+        assert ids.get('fizz') == 'BUZZ'
+        assert session.get('foo') == 'bar'
+        assert context.get('baz') == 'BAZ'
+
+        return 'bar'
+
+    slots = {'fizz': 'buzz', 'ab': 'cd'}
+    ids = {'fizz':'BUZZ', 'ab': 'CD'}
+    session = {'attributes': {'foo': 'bar'}}
+    context = {'baz': 'BAZ'}
+    
+    assert app.dispatch_request(_intent('Bar', slots=slots, ids=ids, session=session, context=context)) == 'bar'
 
 
 def test_intent_badargs():

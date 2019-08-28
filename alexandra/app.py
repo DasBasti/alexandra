@@ -3,6 +3,7 @@ import logging
 from werkzeug.serving import run_simple
 
 from alexandra.session import Session
+from alexandra.context import Context
 from alexandra.util import respond
 from alexandra.wsgi import WsgiApp
 
@@ -51,11 +52,16 @@ class Application:
 
         req_type = body.get('request', {}).get('type')
         session_obj = body.get('session')
+        context_obj = body.get('context')
 
         session = Session(session_obj) if session_obj else None
+        context = Context(context_obj) if context_obj else None
 
         if req_type == 'LaunchRequest':
-            return self.launch_fn(session)
+            if self.launch_fn.__code__.co_argcount == 2:
+                return self.launch_fn(session, context)
+            else:
+                return self.launch_fn(session)
 
         elif req_type == 'IntentRequest':
             intent = body['request']['intent']['name']
@@ -77,9 +83,12 @@ class Application:
 
             if arity == 2:
                 return intent_fn(slots, session)
-            
+
             if arity == 3:
                 return intent_fn(slots, ids, session)
+            
+            if arity == 4:
+                return intent_fn(slots, ids, session, context)
             
             return intent_fn()
 
@@ -131,8 +140,8 @@ class Application:
         def _decorator(func):
             arity = func.__code__.co_argcount
 
-            if arity not in [0, 2, 3]:
-                raise ValueError("expected 0 ,2 or 3 argument function")
+            if arity not in [0, 2, 3, 4]:
+                raise ValueError("expected 0, 2, 3 or 4 argument function")
 
             self.intent_map[intent_name] = func
             return func
