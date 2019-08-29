@@ -72,6 +72,9 @@ class Application:
                 for _, slot in
                 body['request']['intent'].get('slots', {}).items()
             }
+            if body['request']['intent'].get('confirmationStatus'):
+                slots['confirmationStatus'] = body['request']['intent'].get('confirmationStatus')
+
             
             ids = {
                 slot['name']: slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
