@@ -51,8 +51,8 @@ class Application:
         """
 
         req_type = body.get('request', {}).get('type')
-        session_obj = body.get('session')
-        context_obj = body.get('context')
+        session_obj = body.get('session', {})
+        context_obj = body.get('context', {})
 
         session = Session(session_obj) if session_obj else None
         context = Context(context_obj) if context_obj else None
