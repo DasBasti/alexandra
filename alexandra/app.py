@@ -75,13 +75,15 @@ class Application:
             if body['request']['intent'].get('confirmationStatus'):
                 slots['confirmationStatus'] = body['request']['intent'].get('confirmationStatus')
 
-            
-            ids = {
-                slot['name']: slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
-                for _, slot in
-                body['request']['intent'].get('slots', {}).items()
-            }
-
+            try:
+                ids = {
+                    slot['name']: slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
+                    for _, slot in
+                    body['request']['intent'].get('slots', {}).items()
+                }
+            except expression as identifier:
+                ids = {}
+                
             arity = intent_fn.__code__.co_argcount
 
             if arity == 2:
