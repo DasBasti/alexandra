@@ -81,6 +81,7 @@ class Application:
                     ids[slot['name']] = slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
                 else :
                     ids = {"ER_SUCCESS_NO_MATCH": slot['value']}
+                    log.warning('unknown query string: %s', slot['value'])
                 
             arity = intent_fn.__code__.co_argcount
 
