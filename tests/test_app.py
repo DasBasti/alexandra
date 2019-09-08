@@ -19,7 +19,22 @@ def _intent(name, slots=None, ids={}, session=None, context=None):
     req['request']['intent'] = {
         'name': name,
         'slots': {
-            k: {'name': k, 'value': v, "resolutions": {"resolutionsPerAuthority": [{"values": [{"value": {"id": ids.get(k)}}]}]}}
+            k: {'name': k, 'value': v, "resolutions": {"resolutionsPerAuthority": [{"status": {"code": "ER_SUCCESS_MATCH"},"values": [{"value": {"id": ids.get(k)}}]}]}}
+            for k, v in (slots or {}).items()
+        }
+    }
+    req['context'] = context
+
+    return req
+
+
+def _intent_no_match(name, slots=None, ids={}, session=None, context=None):
+    req = _request('IntentRequest', session)
+
+    req['request']['intent'] = {
+        'name': name,
+        'slots': {
+            k: {'name': k, 'value': v, "resolutions": {"resolutionsPerAuthority": [{"status": {"code": "ER_SUCCESS_NO_MATCH"},"values": [{"value": {"id": ids.get(k)}}]}]}}
             for k, v in (slots or {}).items()
         }
     }
@@ -127,6 +142,26 @@ def test_intent_withargs_id_context():
     context = {'baz': 'BAZ'}
     
     assert app.dispatch_request(_intent('Bar', slots=slots, ids=ids, session=session, context=context)) == 'bar'
+
+
+def test_intent_withargs_id_no_match():
+    app = Application()
+
+    @app.intent('Bar')
+    def bar(slots, ids, session, context):
+        assert slots.get('fizz') == 'buzz'
+        assert ids.get('ER_SUCCESS_NO_MATCH') == 'buzz'
+        assert session.get('foo') == 'bar'
+        assert context.get('baz') == 'BAZ'
+
+        return 'bar'
+
+    slots = {'fizz':'buzz'}
+    ids = {'fizz':'buzz'}
+    session = {'attributes': {'foo': 'bar'}}
+    context = {'baz': 'BAZ'}
+    
+    assert app.dispatch_request(_intent_no_match('Bar', slots=slots, ids=ids, session=session, context=context)) == 'bar'
 
 
 def test_intent_badargs():

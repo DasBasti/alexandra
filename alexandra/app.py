@@ -75,14 +75,12 @@ class Application:
             if body['request']['intent'].get('confirmationStatus'):
                 slots['confirmationStatus'] = body['request']['intent'].get('confirmationStatus')
 
-            try:
-                ids = {
-                    slot['name']: slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
-                    for _, slot in
-                    body['request']['intent'].get('slots', {}).items()
-                }
-            except expression as identifier:
-                ids = {}
+            ids = {}
+            for _, slot in body['request']['intent'].get('slots', {}).items():
+                if slot['resolutions']['resolutionsPerAuthority'][0]['status']['code'] == "ER_SUCCESS_MATCH":
+                    ids[slot['name']] = slot['resolutions']['resolutionsPerAuthority'][0]['values'][0]['value']['id']
+                else :
+                    ids = {"ER_SUCCESS_NO_MATCH": slot['value']}
                 
             arity = intent_fn.__code__.co_argcount
 
